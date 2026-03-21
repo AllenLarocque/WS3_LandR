@@ -1,0 +1,4 @@
+{"type":"server-started","port":53430,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:53430","screen_dir":"/home/allarocq/projects/WS3_LandR/.superpowers/brainstorm/65305-1774125886"}
+{"type":"screen-added","file":"/home/allarocq/projects/WS3_LandR/.superpowers/brainstorm/65305-1774125886/architecture.html"}
+{"type":"screen-added","file":"/home/allarocq/projects/WS3_LandR/.superpowers/brainstorm/65305-1774125886/architecture-v2.html"}
+{"type":"server-stopped","reason":"idle timeout"}

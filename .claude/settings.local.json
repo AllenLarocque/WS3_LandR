@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:ws3.readthedocs.io)",
+      "Bash(mkdir -p /home/allarocq/projects/WS3_LandR/.ai_docs)",
+      "Bash(mv /home/allarocq/projects/WS3_LandR/LandR_WS3_IO_comparison.md /home/allarocq/projects/WS3_LandR/.ai_docs/)",
+      "Bash(bash /home/allarocq/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh --project-dir /home/allarocq/projects/WS3_LandR)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:nfi.nfis.org)",
+      "WebFetch(domain:catalogue.data.gov.bc.ca)",
+      "WebFetch(domain:www2.gov.bc.ca)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  }
+}
