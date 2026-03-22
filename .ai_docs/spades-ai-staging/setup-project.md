@@ -80,9 +80,8 @@ Then re-run `global.R`. Once `Require` is installed, `getOrUpdatePkg()` can be s
 
 ```r
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
-if (!require("SpaDES.project")) {
-  Require::Install("PredictiveEcology/SpaDES.project@transition")
-}
+# See the "Bootstrap Block" section above for the full production pattern.
+if (!require("SpaDES.project")) stop("Run the Bootstrap Block above first.")
 
 # ── Top-level variables ────────────────────────────────────────────────────────
 # Define scalars here. They can be referenced inside setupProject() arguments,
@@ -148,9 +147,12 @@ out <- SpaDES.project::setupProject(
   functions = "R/helpers.R"
 )
 
-# ── Run (preferred two-step pattern) ──────────────────────────────────────────
-initOut <- do.call(SpaDES.core::simInit2, out)
-sim     <- SpaDES.core::spades(initOut)
+# ── Run (three-step pattern) ──────────────────────────────────────────────────
+# Step 1: setupProject() — downloads modules, returns named list `out`
+# Step 2: simInit2()     — initializes sim, runs init events
+# Step 3: spades()       — executes event queue
+sim <- SpaDES.core::simInit2(out)   # out is a named list accepted directly
+sim <- SpaDES.core::spades(sim)
 ```
 
 ---
@@ -236,11 +238,11 @@ out$paths$modulePath <- c(out$paths$modulePath, "local_modules")
 out <- SpaDES.project::setupProject(
 
   # Correct: bootstrap-phase packages that must exist before module resolution
-  require = c("terra", "data.table", "reticulate"),
+  require = c("Require", "SpaDES.project", "reticulate"),
 
   # Correct: module dependencies, including GitHub packages
   packages = c(
-    "qs",
+    "qs", "terra", "data.table",
     "PredictiveEcology/LandR@development",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.3.9003)"
   )
@@ -265,18 +267,21 @@ Inside a module, access globals via `P(sim)$.globals$ws3PeriodLength` (or `param
 The preferred way to run the simulation is to split initialization and execution into two explicit steps:
 
 ```r
+# Step 1: setupProject() — downloads modules, returns named list `out`
+# Step 2: simInit2()     — initializes sim, runs init events
+# Step 3: spades()       — executes event queue
 out <- SpaDES.project::setupProject(...)
 
-initOut <- do.call(SpaDES.core::simInit2, out)
-sim     <- SpaDES.core::spades(initOut)
+sim <- SpaDES.core::simInit2(out)   # out is a named list accepted directly
+sim <- SpaDES.core::spades(sim)
 ```
 
-This gives you a chance to inspect or modify the initialized `simList` (`initOut`) before the sim runs — useful for debugging, attaching profiling hooks, or confirming module graph structure.
+This gives you a chance to inspect or modify the initialized `simList` (`sim`) before the sim runs — useful for debugging, attaching profiling hooks, or confirming module graph structure.
 
 `simInitAndSpades()` is an acceptable shorthand only in finalized production scripts where no intermediate inspection is needed:
 
 ```r
-mySim <- do.call(SpaDES.core::simInitAndSpades, out)
+sim <- SpaDES.core::simInitAndSpades(out)   # out is a named list accepted directly
 ```
 
 ### Post-processing `out`
@@ -294,8 +299,8 @@ out$loadOrder <- unlist(out$modules)
 # Add a locally-cloned module not on GitHub
 out$paths$modulePath <- c(out$paths$modulePath, "local_modules")
 
-initOut <- do.call(SpaDES.core::simInit2, out)
-sim     <- SpaDES.core::spades(initOut)
+sim <- SpaDES.core::simInit2(out)   # out is a named list accepted directly
+sim <- SpaDES.core::spades(sim)
 ```
 
 `out$loadOrder <- unlist(out$modules)` is the standard fix when `simInit2()` raises a module dependency error. It flattens the module list into a character vector and passes it as the explicit load order, bypassing automatic graph resolution.
