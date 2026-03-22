@@ -9,10 +9,9 @@ Reference: See `workflows/development-workflow.md` for the full step-by-step wor
 ## Iteration Protocol
 
 1. **Fix one error at a time** — resolve the first error before looking at the next
-2. **Re-run from the failing step** — do not restart from `setupProject()` unless `out` changed:
-   - Fix is in `global.R` (modules list, params, paths) → re-run `setupProject()` and continue
-   - Fix is in a module `.R` file only → re-run from `simInit2(out)` directly
-3. **Read the module file** before changing anything — error messages name the object or event; read the relevant `defineModule()` block or event handler before guessing a fix
+2. **Read the module file before changing anything** — error messages name the object or event; read the relevant `defineModule()` block or event handler before guessing a fix
+3. **If the fix is in a module `.R` file only** — re-run from `simInit2(out)` directly; no need to re-run `setupProject()`
+4. **If the fix requires changing `out`** (adding a module, changing a parameter, changing paths in `global.R`) — re-run `setupProject()` and continue from there
 
 ---
 
