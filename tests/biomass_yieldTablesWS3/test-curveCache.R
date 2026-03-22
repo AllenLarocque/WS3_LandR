@@ -1,10 +1,14 @@
 library(testthat)
-library(data.table)
-source("/home/allarocq/projects/WS3_LandR/modules/biomass_yieldTablesWS3/R/curveCache.R")
+source("modules/biomass_yieldTablesWS3/R/curveCache.R")
 
 test_that("devTypeTupleKey produces consistent pipe-delimited string key", {
   key <- devTypeTupleKey("Pice_mar", "low", "eco1")
   expect_equal(key, "Pice_mar|low|eco1")
+})
+
+test_that("devTypeTupleKey errors on NA input", {
+  expect_error(devTypeTupleKey(NA, "low", "eco1"))
+  expect_error(devTypeTupleKey("Pice_mar", NA, "eco1"))
 })
 
 test_that("diffDevTypes returns only new tuples not in cache", {
