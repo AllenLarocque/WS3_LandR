@@ -6,7 +6,7 @@ The core insight is that **before the first `source("global.R")`, modules are no
 
 ## Step 1: Write `global.R`
 
-Follow `workflows/global-construction.md`. At this point modules are not yet downloaded. Write defensively; annotate unknowns with `# TODO:`.
+Follow `workflows/global-construction.md` (and `core/setup-project.md` for `setupProject()` syntax reference). At this point modules are not yet downloaded. Write defensively; annotate unknowns with `# TODO:`.
 
 ---
 
@@ -113,7 +113,7 @@ sim <- SpaDES.core::spades(sim)
 ## General Principles
 
 - **Never skip `simInit2`** — use the three-step pattern during all development. `simInitAndSpades()` is acceptable only in finalized production scripts where the run is known to succeed.
-- **`simInit2` runs `init` events** when `spades.allowInitDuringSimInit = TRUE`. Errors that look like `spades()` errors may surface during `simInit2` — check the traceback for the event name.
+- **`simInit2` runs `init` events** — see Step 4 for the `spades.allowInitDuringSimInit = TRUE` caveat; errors that look like `spades()` errors may surface during `simInit2`.
 - **Restart from the failing step** — after a fix, do not re-run `setupProject()` unless `out` itself changed:
   - Fix is in `global.R` (modules list, params, paths) → re-run `setupProject()` and continue
   - Fix is in a module `.R` file only → re-run from `simInit2(out)` directly
