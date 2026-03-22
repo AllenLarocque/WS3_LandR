@@ -8,12 +8,15 @@ binSiteQuality <- function(cohortData, speciesEcoregion, speciesMaxANPP,
   cd <- merge(cd, speciesEcoregion[, .(speciesCode, ecoregionGroup, maxANPP)],
               by = c("speciesCode", "ecoregionGroup"), all.x = TRUE)
 
-  # warn on unmatched rows and assign fallback
-  unmatched <- cd[is.na(maxANPP)]
-  if (nrow(unmatched) > 0) {
-    warning("binSiteQuality: ", nrow(unmatched),
+  # identify unmatched rows before any imputation
+  cd[, .missing_eco := is.na(maxANPP)]
+
+  # warn on unmatched rows and assign fallback for ratio computation
+  n_missing <- sum(cd$.missing_eco)
+  if (n_missing > 0) {
+    warning("binSiteQuality: ", n_missing,
             " cohorts have unrecognised ecoregion — assigned 'low'")
-    cd[is.na(maxANPP), maxANPP := 0]
+    cd[(.missing_eco), maxANPP := 0]
   }
 
   # join species-level ceiling maxANPP
@@ -27,6 +30,10 @@ binSiteQuality <- function(cohortData, speciesEcoregion, speciesMaxANPP,
     ratio < bins[2], "med",
     default         = "high"
   )]
-  cd[, c("maxANPP", "globalMaxANPP", "ratio") := NULL]
+
+  # overwrite with "low" for missing-ecoregion rows regardless of bins
+  cd[(.missing_eco), site_quality := "low"]
+
+  cd[, c("maxANPP", "globalMaxANPP", "ratio", ".missing_eco") := NULL]
   cd[]
 }

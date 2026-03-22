@@ -41,8 +41,8 @@ test_that("binSiteQuality handles missing ecoregion gracefully", {
     result <- binSiteQuality(cohortData, speciesEcoregion, speciesMaxANPP),
     regexp = "ecoregion"
   )
-  # should still return a result with site_quality column
   expect_true("site_quality" %in% names(result))
+  expect_equal(result$site_quality, "low")   # missing ecoregion always bins as "low"
 })
 
 test_that("binSiteQuality does not modify the input cohortData", {
