@@ -189,8 +189,7 @@ test_that("simulateStand returns data.frame with age and B_gm2 columns (mocked)"
   expect_true(all(c("age", "B_gm2") %in% names(result)))
   expect_equal(nrow(result), maxAge + 1L)  # ages 0..maxAge inclusive
   expect_equal(result$age, 0:maxAge)
-  expect_true(all(result$B_gm2 >= 0 | is.na(result$B_gm2)))
-  # verify exact B values match the mock data
+  # verify exact B values match the mock data (also implicitly checks non-negativity)
   expect_equal(result$B_gm2, expected_B)
 })
 

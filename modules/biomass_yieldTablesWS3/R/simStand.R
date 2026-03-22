@@ -119,9 +119,9 @@ simulateStand <- function(speciesCode, site_quality, ecoregion,
   )
 
   # Filter speciesEcoregion to the relevant ecoregion
-  secoregion_sub <- speciesEcoregion[
-    speciesEcoregion$speciesCode    == speciesCode &
-    speciesEcoregion$ecoregionGroup == ecoregion, ]
+  .sppCode  <- speciesCode
+  .ecoGroup <- ecoregion
+  secoregion_sub <- speciesEcoregion[speciesCode == .sppCode & ecoregionGroup == .ecoGroup]
   if (nrow(secoregion_sub) == 0) {
     stop("simulateStand: no speciesEcoregion row for speciesCode='", speciesCode,
          "', ecoregion='", ecoregion, "'")
