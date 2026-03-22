@@ -66,9 +66,28 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
         horizon       = as.integer(P(sim)$ws3Horizon),
         period_length = as.integer(params(sim)$.globals$ws3PeriodLength)
       )
+      # Register "clearcut" with WS3 ForestModel as a known disturbance action.
+      # The aspatial callback is a no-op because actual cohort removal is handled
+      # on the R side via applyHarvestAction() / applyClearcut() in harvestBridge.R.
       sim$.ws3fm$add_action("clearcut", reticulate::py_eval("lambda *a, **kw: None"))
 
-      # ForestRaster for spatial allocation (initialised in ws3Plan once we have full inventory)
+      # ── ForestRaster (spatial harvest allocator) ─────────────────────────────
+      # TODO: initialise ws3$spatial$ForestRaster here once the rasterized
+      # inventory GeoTIFF (3-layer: theme hash, age, block ID) is available.
+      #
+      # ForestRaster requires:
+      #   hdt_map      — dict mapping raster hash values → dev type tuples
+      #   hdt_func     — hash function encoding dev type tuples → integer
+      #   src_path     — path to 3-layer input inventory GeoTIFF
+      #   snk_path     — output directory for disturbance GeoTIFFs
+      #   acode_map    — dict of disturbance codes → output filename prefixes
+      #   forestmodel  — the ForestModel instance (sim$.ws3fm)
+      #   base_year, period_length, horizon
+      #
+      # See: https://github.com/UBC-FRESH/ws3/blob/main/ws3/spatial.py
+      #
+      # Until ForestRaster is wired up, ws3Plan will skip spatial allocation
+      # and log a warning per period.
       sim$.ws3fr <- NULL
 
       sim <- scheduleEvent(sim, start(sim), "Biomass_ws3Harvest", "ws3Plan",
@@ -139,11 +158,14 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
   outDir <- file.path(outputPath(sim), "harvest")
   dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
 
-  # ForestRaster.allocate_schedule writes one GeoTIFF per action per year
+  # ForestRaster.allocate_schedule writes one GeoTIFF per action per year.
+  # ForestRaster requires a pre-built rasterized inventory and hdt_map/hdt_func
+  # (see TODO in init block). Until those are wired up, spatial allocation is skipped.
   if (!is.null(sim$.ws3fr)) {
     sim$.ws3fr$allocate_schedule(outDir)
   } else {
-    message("Biomass_ws3Harvest: ForestRaster not initialised — skipping spatial allocation")
+    warning("Biomass_ws3Harvest: ForestRaster not initialised — spatial harvest allocation ",
+            "skipped for period at year ", time(sim), ". See TODO in init block.")
   }
 
   # ── 7. Record schedule for reporting ────────────────────────────────────────
