@@ -1,5 +1,5 @@
 # simulateStand(): run Biomass_core for a single-cohort stand, return age-biomass trajectory
-# extractBByAge(): parse saved cohortData outputs to a data.frame(age, B_gm2)
+# extractBByAge(): parse saved cohortData outputs to a data.table(age, B_gm2)
 
 # ── extractBByAge ─────────────────────────────────────────────────────────────
 #
@@ -10,10 +10,15 @@
 #   outputFiles  data.frame with columns: saveTime (integer/numeric), file (character)
 #   maxAge       integer — the simulation end time
 #
-# Returns: data.frame(age = 0:maxAge, B_gm2 = numeric) where B_gm2 is NA for
+# Returns: data.table(age = 0:maxAge, B_gm2 = numeric) where B_gm2 is NA for
 #          years whose output file is missing.
 #
 extractBByAge <- function(outputFiles, maxAge) {
+  stopifnot(
+    all(c("saveTime", "file") %in% names(outputFiles)),
+    maxAge >= 0
+  )
+
   ages <- seq(0L, as.integer(maxAge), by = 1L)
 
   B_vals <- vapply(ages, function(yr) {
@@ -22,11 +27,11 @@ extractBByAge <- function(outputFiles, maxAge) {
       return(NA_real_)
     }
     cd <- qs2::qs_read(row$file[1])
-    # sum B across all cohorts in pixelGroup 1
-    sum(cd$B[cd$pixelGroup == 1L], na.rm = FALSE)
+    # na.rm = TRUE: a missing cohort B should not invalidate the whole year's biomass
+    sum(cd$B[cd$pixelGroup == 1L], na.rm = TRUE)
   }, numeric(1))
 
-  data.frame(age = ages, B_gm2 = B_vals, stringsAsFactors = FALSE)
+  data.table::data.table(age = ages, B_gm2 = B_vals)
 }
 
 # ── simulateStand ─────────────────────────────────────────────────────────────
@@ -47,7 +52,7 @@ extractBByAge <- function(outputFiles, maxAge) {
 #                                      (Biomass_core will be downloaded here if absent)
 #   outputPath        character(1)   — directory for sim output files
 #
-# Returns: data.frame(age, B_gm2) — one row per year from 0 to effective maxAge.
+# Returns: data.table(age, B_gm2) — one row per year from 0 to effective maxAge.
 #
 simulateStand <- function(speciesCode, site_quality, ecoregion,
                           species, speciesEcoregion,
@@ -55,9 +60,25 @@ simulateStand <- function(speciesCode, site_quality, ecoregion,
                           modulePath  = file.path(tempdir(), "spades_modules"),
                           outputPath  = file.path(tempdir(), "simStand_outputs")) {
 
+  # ── input validation ───────────────────────────────────────────────────────
+  stopifnot(
+    length(speciesCode) == 1L,
+    !is.na(speciesCode),
+    nchar(speciesCode) > 0L,
+    maxAge > 0
+  )
+
+  # site_quality is passed for documentation purposes (dev type tuple tracking).
+  # The ecological parameters for this site quality class are captured via
+  # the filtered speciesEcoregion table (maxANPP, maxB).
+
   # ── resolve effective simulation end time ──────────────────────────────────
-  spp_row    <- species[species$speciesCode == speciesCode, ]
-  longevity  <- if (nrow(spp_row) > 0) spp_row$longevity[1] else maxAge
+  .sppCode <- speciesCode
+  spp_row  <- species[speciesCode == .sppCode]
+  if (nrow(spp_row) == 0) {
+    stop("simulateStand: speciesCode '", speciesCode, "' not found in species table")
+  }
+  longevity  <- spp_row$longevity[1]
   end_time   <- min(as.integer(maxAge), as.integer(longevity))
 
   # ── ensure Biomass_core is present ────────────────────────────────────────
@@ -101,6 +122,10 @@ simulateStand <- function(speciesCode, site_quality, ecoregion,
   secoregion_sub <- speciesEcoregion[
     speciesEcoregion$speciesCode    == speciesCode &
     speciesEcoregion$ecoregionGroup == ecoregion, ]
+  if (nrow(secoregion_sub) == 0) {
+    stop("simulateStand: no speciesEcoregion row for speciesCode='", speciesCode,
+         "', ecoregion='", ecoregion, "'")
+  }
 
   # ── outputs spec: save cohortData at every year ────────────────────────────
   save_times <- seq(0L, end_time, by = 1L)

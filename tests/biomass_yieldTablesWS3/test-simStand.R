@@ -29,6 +29,30 @@ make_fake_qs_file <- function(age, B_value, path) {
   path
 }
 
+# ── Shared setup helper for simulateStand mock tests ─────────────────────────
+
+make_simulateStand_inputs <- function() {
+  list(
+    species_dt = data.table(
+      speciesCode    = "Pice_mar",
+      maxB           = 35000L,
+      maxANPP        = 700L,
+      longevity      = 300L,
+      mortalityshape = 25L,
+      growthcurve    = 0.25,
+      seeddispDist   = 100L,
+      postfireregen  = "serotiny"
+    ),
+    speciesEcoregion_dt = data.table(
+      speciesCode    = "Pice_mar",
+      ecoregionGroup = "eco1",
+      maxANPP        = 700L,
+      maxB           = 35000L,
+      establishprob  = 0.5
+    )
+  )
+}
+
 # ── Test 1: extractBByAge correctly reads B values from qs2 files ────────────
 
 test_that("extractBByAge extracts correct B values from qs2 files", {
@@ -111,26 +135,7 @@ test_that("extractBByAge sums B across multiple cohorts in same pixelGroup", {
 # ── Test 2: simulateStand return structure (using mock) ──────────────────────
 
 test_that("simulateStand returns data.frame with age and B_gm2 columns (mocked)", {
-  # Build minimal inputs
-  species_dt <- data.table(
-    speciesCode    = "Pice_mar",
-    maxB           = 35000L,
-    maxANPP        = 700L,
-    longevity      = 300L,
-    mortalityshape = 25L,
-    growthcurve    = 0.25,
-    seeddispDist   = 100L,
-    postfireregen  = "serotiny"
-  )
-
-  speciesEcoregion_dt <- data.table(
-    speciesCode    = "Pice_mar",
-    ecoregionGroup = "eco1",
-    maxANPP        = 700L,
-    maxB           = 35000L,
-    establishprob  = 0.5
-  )
-
+  inputs <- make_simulateStand_inputs()
   maxAge <- 5L
 
   tmp_dir <- tempfile("simStand_mock_")
@@ -138,6 +143,8 @@ test_that("simulateStand returns data.frame with age and B_gm2 columns (mocked)"
   on.exit(unlink(tmp_dir, recursive = TRUE))
 
   # Pre-create fake output files that extractBByAge will read
+  # B values follow the formula: yr * 50L + 1L
+  expected_B <- as.numeric(0:maxAge * 50L + 1L)
   fake_files <- vapply(0:maxAge, function(yr) {
     p <- file.path(tmp_dir, sprintf("cohortData_%04d.qs2", yr))
     cd <- data.table(
@@ -171,8 +178,8 @@ test_that("simulateStand returns data.frame with age and B_gm2 columns (mocked)"
     speciesCode      = "Pice_mar",
     site_quality     = "med",
     ecoregion        = "eco1",
-    species          = species_dt,
-    speciesEcoregion = speciesEcoregion_dt,
+    species          = inputs$species_dt,
+    speciesEcoregion = inputs$speciesEcoregion_dt,
     maxAge           = maxAge,
     modulePath       = tmp_dir,
     outputPath       = tmp_dir
@@ -183,28 +190,16 @@ test_that("simulateStand returns data.frame with age and B_gm2 columns (mocked)"
   expect_equal(nrow(result), maxAge + 1L)  # ages 0..maxAge inclusive
   expect_equal(result$age, 0:maxAge)
   expect_true(all(result$B_gm2 >= 0 | is.na(result$B_gm2)))
+  # verify exact B values match the mock data
+  expect_equal(result$B_gm2, expected_B)
 })
 
 # ── Test 3: simulateStand clips maxAge to species longevity ─────────────────
 
 test_that("simulateStand uses species longevity when maxAge > longevity (mocked)", {
-  species_dt <- data.table(
-    speciesCode    = "Pice_mar",
-    maxB           = 35000L,
-    maxANPP        = 700L,
-    longevity      = 10L,          # short longevity for test
-    mortalityshape = 25L,
-    growthcurve    = 0.25,
-    seeddispDist   = 100L,
-    postfireregen  = "serotiny"
-  )
-  speciesEcoregion_dt <- data.table(
-    speciesCode    = "Pice_mar",
-    ecoregionGroup = "eco1",
-    maxANPP        = 700L,
-    maxB           = 35000L,
-    establishprob  = 0.5
-  )
+  inputs <- make_simulateStand_inputs()
+  # Override longevity to be short for this test
+  inputs$species_dt[, longevity := 10L]
 
   tmp_dir <- tempfile("simStand_longevity_")
   dir.create(tmp_dir, recursive = TRUE)
@@ -242,8 +237,8 @@ test_that("simulateStand uses species longevity when maxAge > longevity (mocked)
     speciesCode      = "Pice_mar",
     site_quality     = "med",
     ecoregion        = "eco1",
-    species          = species_dt,
-    speciesEcoregion = speciesEcoregion_dt,
+    species          = inputs$species_dt,
+    speciesEcoregion = inputs$speciesEcoregion_dt,
     maxAge           = 300L,       # > longevity
     modulePath       = tmp_dir,
     outputPath       = tmp_dir
