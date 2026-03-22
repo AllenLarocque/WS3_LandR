@@ -3,31 +3,21 @@
 
 .pkgEnv <- new.env(parent = emptyenv())
 
-# Capture the absolute path of this script at source() time, so CSV lookup works
-# regardless of the working directory when tests or the SpaDES module call these functions.
-.boudewynScriptDir <- tryCatch(
-  normalizePath(dirname(sys.frame(1)$ofile), mustWork = FALSE),
-  error = function(e) NULL
-)
-
-loadSpeciesLookup <- function() {
+loadSpeciesLookup <- function(csvPath = NULL) {
   if (!is.null(.pkgEnv$speciesLookup)) return(.pkgEnv$speciesLookup)
 
-  csvPath <- if (!is.null(.boudewynScriptDir)) {
-    # Path relative to this script's location (absolute, captured at source time)
-    normalizePath(
-      file.path(.boudewynScriptDir, "..", "data", "species_boudewyn_lookup.csv"),
-      mustWork = FALSE
-    )
-  } else {
-    # Fallback 1: testthat sets TESTTHAT_WD to the original project root
-    testhatWd <- Sys.getenv("TESTTHAT_WD", unset = "")
-    if (nzchar(testhatWd)) {
-      file.path(testhatWd, "modules/biomass_yieldTablesWS3/data/species_boudewyn_lookup.csv")
-    } else {
-      # Fallback 2: relative to current working directory (project root)
+  if (is.null(csvPath)) {
+    # Try paths in order from most to least specific
+    candidates <- c(
+      file.path(Sys.getenv("TESTTHAT_WD"), "modules/biomass_yieldTablesWS3/data/species_boudewyn_lookup.csv"),
       "modules/biomass_yieldTablesWS3/data/species_boudewyn_lookup.csv"
-    }
+    )
+    csvPath <- candidates[file.exists(candidates)][1]
+  }
+
+  if (is.na(csvPath) || !file.exists(csvPath)) {
+    stop("loadSpeciesLookup: cannot find species_boudewyn_lookup.csv. ",
+         "Set csvPath explicitly or run from the project root directory.")
   }
 
   lut <- utils::read.csv(csvPath, stringsAsFactors = FALSE)
@@ -36,6 +26,8 @@ loadSpeciesLookup <- function() {
 }
 
 lookupBoudewynKeys <- function(speciesCode, juris_id, ecozone = NULL) {
+  stopifnot(length(speciesCode) == 1L, !is.na(speciesCode),
+            length(juris_id) == 1L, !is.na(juris_id))
   lut <- loadSpeciesLookup()
   row <- lut[lut$speciesCode == speciesCode & lut$juris_id == juris_id, ]
   if (nrow(row) == 0) {
