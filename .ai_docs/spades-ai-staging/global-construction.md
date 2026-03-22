@@ -153,7 +153,10 @@ rasterToMatch = {
 ### Step 6 — End with the three-step execution block
 
 ```r
+# Step 1: setupProject() — already called above; `out` is now a named list
+# Step 2: Initialize the sim (downloads remaining data, runs init events)
 sim <- SpaDES.core::simInit2(out)
+# Step 3: Run the event queue
 sim <- SpaDES.core::spades(sim)
 ```
 
@@ -227,7 +230,10 @@ out <- SpaDES.project::setupProject(
   )
 )
 
+# Step 1: setupProject() — already called above; `out` is now a named list
+# Step 2: Initialize the sim (downloads remaining data, runs init events)
 sim <- SpaDES.core::simInit2(out)
+# Step 3: Run the event queue
 sim <- SpaDES.core::spades(sim)
 ```
 
