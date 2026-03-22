@@ -34,8 +34,8 @@ repos <- c("https://predictiveecology.r-universe.dev", getOption("repos"))
 source("https://raw.githubusercontent.com/PredictiveEcology/pemisc/refs/heads/development/R/getOrUpdatePkg.R")
 
 getOrUpdatePkg(
-  c("Require", "SpaDES.project"),
-  c("1.0.1.9003", "0.1.1.9037")
+  c("Require", "SpaDES.project", "reticulate"),
+  c("1.0.1.9003", "0.1.1.9037",  "1.43.0")
 )
 
 if (!require("SpaDES.project")) {
@@ -174,7 +174,7 @@ Use this path when the user has described what they want to simulate but has not
 |---|---|---|
 | Forest inventory / data prep | `Biomass_borealDataPrep` | `PredictiveEcology/Biomass_borealDataPrep@main` |
 | Annual succession (growth, mortality) | `Biomass_core` | `PredictiveEcology/Biomass_core@main` |
-| Fire disturbance | `scfm` suite | `PredictiveEcology/scfm@development/modules/{scfmDataPrep,scfmLandcoverInit,scfmDriver,scfmEscape,scfmSpread,scfmRegime}` |
+| Fire disturbance | `scfm` suite | `file.path("PredictiveEcology/scfm@development/modules", c("scfmDataPrep", "scfmLandcoverInit", "scfmDriver", "scfmEscape", "scfmSpread", "scfmRegime"))` |
 | Harvest (WS3) | `biomass_ws3Harvest` | local / project-specific |
 | Carbon accounting | `LandRCBM` suite | `PredictiveEcology/LandRCBM@main` |
 | Yield tables for WS3 | `biomass_yieldTablesWS3` | local / project-specific |
