@@ -12,8 +12,6 @@ defineModule(sim, list(
   documentation = list(),
   reqdPkgs    = list("data.table", "terra"),
   parameters  = bindrows(
-    defineParameter("ws3PeriodLength", "integer", 10L, 1L, 100L,
-                    "Years between WS3 planning solves"),
     defineParameter("maxSimAge", "integer", 300L, 50L, 500L,
                     "Maximum stand age for yield curve simulation"),
     defineParameter("siteQualityBins", "numeric", c(0.33, 0.67), 0, 1,
@@ -23,7 +21,7 @@ defineModule(sim, list(
     expectsInput("cohortData",       "data.table", "LandR cohort data",         "Biomass_core"),
     expectsInput("species",          "data.table", "LandR species parameters",  "Biomass_borealDataPrep"),
     expectsInput("speciesEcoregion", "data.table", "Species x ecoregion params","Biomass_borealDataPrep"),
-    expectsInput("pixelGroupMap",    "SpatRaster", "Pixel group raster",        "Biomass_core")
+    expectsInput("pixelGroupMap",    "SpatRaster", "Pixel group raster",        "Biomass_borealDataPrep")
   ),
   outputObjects = bindrows(
     createsOutput("ws3YieldCurves", "list",
@@ -49,7 +47,7 @@ doEvent.biomass_yieldTablesWS3 <- function(sim, eventTime, eventType) {
     },
     updateCurves = {
       sim <- .updateCurves(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$ws3PeriodLength,
+      sim <- scheduleEvent(sim, time(sim) + params(sim)$.globals$ws3PeriodLength,
                            "biomass_yieldTablesWS3", "updateCurves", eventPriority = 1)
     }
   )
@@ -57,9 +55,9 @@ doEvent.biomass_yieldTablesWS3 <- function(sim, eventTime, eventType) {
 }
 
 .updateCurves <- function(sim) {
-  # 1. Derive species-level max ANPP ceiling
-  speciesMaxANPP <- sim$speciesEcoregion[, .(globalMaxANPP = max(maxANPP)),
-                                          by = speciesCode]
+  # 1. Derive species-level max ANPP ceiling from the species table (species$maxANPP
+  #    is the theoretical global maximum; speciesEcoregion$maxANPP is ecoregion-specific)
+  speciesMaxANPP <- sim$species[, .(speciesCode, globalMaxANPP = maxANPP)]
 
   # 2. Bin site quality
   cd <- binSiteQuality(sim$cohortData, sim$speciesEcoregion, speciesMaxANPP,
