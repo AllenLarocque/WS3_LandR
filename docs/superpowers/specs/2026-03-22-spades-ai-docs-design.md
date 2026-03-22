@@ -41,7 +41,7 @@ Finalized version of the existing `spades-ai-setupProject-draft.md`. Improvement
 - Remove "draft" framing; promote to canonical reference
 - Add `Require::setupOff()` and `getOrUpdatePkg()` bootstrap pattern (as seen in the real `global.R`)
 - Add `Require::setLinuxBinaryRepo()` pattern for Linux binary packages
-- Clarify the `require` vs `packages` argument distinction
+- Clarify the `require` vs `packages` argument distinction: `require` installs packages in the bootstrap phase before modules are downloaded (use for `Require`, `SpaDES.project`, `reticulate`); `packages` installs packages after modules are resolved (use for packages that modules depend on, including GitHub packages). Putting a GitHub package in `require` breaks install order.
 - Add the `simInit2` + `spades()` two-step pattern as the preferred alternative to `simInitAndSpades()`
 - Add note on `Require::setupOff()` — disables Require's automatic package management during the sim run
 
@@ -79,7 +79,7 @@ User describes the goal. AI must select modules:
 
 ### Common patterns for both paths
 
-- Always define `studyAreaLarge` as a buffer around `studyArea` (required by `Biomass_borealDataPrep`)
+- Typically define `studyAreaLarge` as a buffer (usually 20,000 m) around `studyArea` — `Biomass_borealDataPrep` uses this to download climate/inventory data for the surrounding region; the buffer size has a functional meaning, not just stylistic
 - Never use `library()` — use `require` argument in `setupProject()`
 - Never use `setwd()`
 - Local modules not on GitHub: add their parent directory to `modulePath` as a vector
@@ -110,8 +110,10 @@ out <- SpaDES.project::setupProject(...)
 Before initializing the sim, read the downloaded module `.R` files:
 
 - Each module's main file (e.g., `modules/Biomass_core/Biomass_core.R`) contains `inputObjects`, `outputObjects`, and the event schedule in `defineModule()`
-- Read these to understand: what the module expects in `sim$`, what it produces, and when events fire
-- This context is critical for diagnosing init errors in Step 4
+- In `inputObjects`: check `objectClass` (the expected R class) and `sourceModuleSelect` (which module in the stack produces this object — if present, a missing-object error means that module is absent from `modules` list, not that you need to supply it manually)
+- In `outputObjects`: check what each module produces and at what event; this tells you which modules must load before others
+- In the event schedule (`doEvent.*` functions): check `scheduleEvent()` calls to understand timing and dependencies
+- This context is critical for diagnosing both Step 4 and Step 5 errors
 
 ### Step 4: Run `simInit2()`
 
@@ -137,9 +139,11 @@ sim <- SpaDES.core::spades(sim)
 
 ### General principles
 
-- **Never skip `simInit2`** in favor of going straight to `simInitAndSpades` — the intermediate `sim` object allows inspection
+- **Never skip `simInit2`** in favor of going straight to `simInitAndSpades` — the intermediate `sim` object allows inspection. `simInitAndSpades` is acceptable only in finalized production scripts where the run is known to succeed.
+- **`simInit2` runs `init` events** when `spades.allowInitDuringSimInit = TRUE` (the default in this project). Errors that look like `spades()` errors may actually surface during `simInit2` — check the traceback for the event name.
 - **After any fix, restart from the failing step** — do not re-run from `setupProject()` unless `out` itself changed
 - **Cache is your friend** — `reproducible.useCache = TRUE` means repeated runs skip expensive data downloads; don't clear cache unless a data input genuinely changed
+- **`loadOrder` matters** — if `simInit2` throws a dependency error naming two modules, post-process `out$loadOrder <- unlist(out$modules)` to enforce explicit load order before retrying
 
 ---
 
@@ -154,13 +158,15 @@ Error-driven iteration guide. Covers the most common failure modes at each stage
 | `Error in Require(...)` / version conflict | Package version mismatch | Check `getOrUpdatePkg()` version pins; update or relax |
 | GitHub 404 / rate limit | Bad module ref or unauthenticated | Check `"org/repo@branch"` string; set `GITHUB_PAT` |
 | `Error: path does not exist` | `modulePath` or `inputPath` missing | Create the directory; `dir.create("modules")` etc. |
+| `curl` error / `cannot open URL` before `setupProject()` runs | Network unavailable or raw GitHub URL for `getOrUpdatePkg` moved | Check network; fall back to `install.packages("Require")` and comment out the `source(...)` line |
 
 ### `simInit2()` errors
 
 | Error pattern | Likely cause | Fix |
 |---|---|---|
 | `object 'X' not found in sim` | Missing `inputObject` | Check which module produces `X`; ensure it's in `modules` list or supply manually |
-| `parameter 'X' not found` | Wrong parameter name | Read `defineModule()` in the module file for correct param names |
+| `"unused.*parameter"` / `"not defined in.*module"` warning/error | Wrong parameter name in `params` | Read `defineModule()` in the module file for the correct param names and spelling |
+| `"cannot import Python 'ws3'"` or `reticulate` import error | Python env missing ws3 | Run `pip install ws3` in the active Python env; check `reticulate::py_config()` points to the right env |
 | `studyArea` / `rasterToMatch` CRS error | CRS mismatch between study area and data | Re-project in the `studyArea = {}` block |
 
 ### `spades()` errors
@@ -168,7 +174,8 @@ Error-driven iteration guide. Covers the most common failure modes at each stage
 | Error pattern | Likely cause | Fix |
 |---|---|---|
 | Traceback names a specific module + event | Bug in that module's event handler | Read the handler; fix or file an issue |
-| `NA` or empty object mid-sim | Module produced invalid output | Check the producing module's outputObject; add `sim$X` inspection after `simInit2` |
+| `NA` or empty object immediately after `simInit2` | `init` event of the producing module returned bad output | Read that module's `init` handler; check `inputObjects` were valid at init time |
+| `NA` or empty object mid-run (during `spades()`) | Periodic/annual event of producing module returned bad output | Read the named event handler in the traceback; check upstream `sim$` objects at that time step |
 | Infinite loop / sim never advances | Event scheduling bug | Check `scheduleEvent()` calls in the affected module |
 
 ### Iteration protocol
