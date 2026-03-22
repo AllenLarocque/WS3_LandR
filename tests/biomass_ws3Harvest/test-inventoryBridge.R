@@ -3,19 +3,19 @@ library(data.table)
 
 # testthat::test_file() sets cwd to the test file's directory.
 # Navigate up two levels to the project root for the source() calls.
-.testDir <- normalizePath(".")   # will be tests/Biomass_ws3Harvest/ under test_file()
+.testDir <- normalizePath(".")   # will be tests/biomass_ws3Harvest/ under test_file()
 .curveCache <- normalizePath(
   file.path(.testDir, "../../modules/biomass_yieldTablesWS3/R/curveCache.R"),
   mustWork = FALSE
 )
 .invBridge <- normalizePath(
-  file.path(.testDir, "../../modules/Biomass_ws3Harvest/R/inventoryBridge.R"),
+  file.path(.testDir, "../../modules/biomass_ws3Harvest/R/inventoryBridge.R"),
   mustWork = FALSE
 )
 if (!file.exists(.curveCache)) {
   # fallback for interactive use from project root
   .curveCache <- "modules/biomass_yieldTablesWS3/R/curveCache.R"
-  .invBridge  <- "modules/Biomass_ws3Harvest/R/inventoryBridge.R"
+  .invBridge  <- "modules/biomass_ws3Harvest/R/inventoryBridge.R"
 }
 source(.curveCache)   # for devTypeTupleKey
 source(.invBridge)

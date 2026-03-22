@@ -1,11 +1,11 @@
-# modules/Biomass_ws3Harvest/Biomass_ws3Harvest.R
+# modules/biomass_ws3Harvest/biomass_ws3Harvest.R
 defineModule(sim, list(
-  name        = "Biomass_ws3Harvest",
+  name        = "biomass_ws3Harvest",
   description = "Couple LandR with WS3: inventory bridge, WS3 solve, harvest application",
   keywords    = c("LandR", "WS3", "harvest", "wood supply"),
   authors     = person("Allen", "Larocque"),
   childModules = character(0),
-  version     = list(Biomass_ws3Harvest = "0.1.0"),
+  version     = list(biomass_ws3Harvest = "0.1.0"),
   timeframe   = as.POSIXlt(c(NA, NA)),
   timeunit    = "year",
   citation    = list(),
@@ -36,7 +36,7 @@ defineModule(sim, list(
   )
 ))
 
-doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
+doEvent.biomass_ws3Harvest <- function(sim, eventTime, eventType) {
   switch(eventType,
     init = {
       # source helper files (harvestBridge before actionDispatch — applyClearcut needed in registry)
@@ -53,7 +53,7 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
       tryCatch(
         reticulate::import("ws3"),
         error = function(e) stop(
-          "Biomass_ws3Harvest: cannot import Python 'ws3'. ",
+          "biomass_ws3Harvest: cannot import Python 'ws3'. ",
           "Run: pip install ws3\nOriginal error: ", e$message
         )
       )
@@ -90,13 +90,13 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
       # and log a warning per period.
       sim$.ws3fr <- NULL
 
-      sim <- scheduleEvent(sim, start(sim), "Biomass_ws3Harvest", "ws3Plan",
+      sim <- scheduleEvent(sim, start(sim), "biomass_ws3Harvest", "ws3Plan",
                            eventPriority = 2)   # after updateCurves (priority 1)
     },
     ws3Plan = {
       sim <- .ws3Plan(sim)
       sim <- scheduleEvent(sim, time(sim) + params(sim)$.globals$ws3PeriodLength,
-                           "Biomass_ws3Harvest", "ws3Plan", eventPriority = 2)
+                           "biomass_ws3Harvest", "ws3Plan", eventPriority = 2)
     }
   )
   invisible(sim)
@@ -149,7 +149,7 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
   p$solve(P(sim)$ws3Solver)
 
   if (p$status() != "optimal") {
-    warning("Biomass_ws3Harvest: WS3 solve status '", p$status(),
+    warning("biomass_ws3Harvest: WS3 solve status '", p$status(),
             "' at year ", time(sim), " — skipping harvest this period")
     return(sim)
   }
@@ -164,7 +164,7 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
   if (!is.null(sim$.ws3fr)) {
     sim$.ws3fr$allocate_schedule(outDir)
   } else {
-    warning("Biomass_ws3Harvest: ForestRaster not initialised — spatial harvest allocation ",
+    warning("biomass_ws3Harvest: ForestRaster not initialised — spatial harvest allocation ",
             "skipped for period at year ", time(sim), ". See TODO in init block.")
   }
 
@@ -176,7 +176,7 @@ doEvent.Biomass_ws3Harvest <- function(sim, eventTime, eventType) {
   for (yr in period) {
     tifPath <- file.path(outDir, sprintf("clearcut_%d.tif", yr))
     if (!file.exists(tifPath)) {
-      message("Biomass_ws3Harvest: no clearcut GeoTIFF for year ", yr, " — skipping")
+      message("biomass_ws3Harvest: no clearcut GeoTIFF for year ", yr, " — skipping")
       next
     }
     hrast            <- terra::rast(tifPath)

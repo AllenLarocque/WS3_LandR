@@ -4,19 +4,19 @@ library(terra)
 
 # testthat::test_file() sets cwd to the test file's directory.
 # Navigate up two levels to the project root for the source() calls.
-.testDir <- normalizePath(".")   # will be tests/Biomass_ws3Harvest/ under test_file()
+.testDir <- normalizePath(".")   # will be tests/biomass_ws3Harvest/ under test_file()
 .harvestBridge <- normalizePath(
-  file.path(.testDir, "../../modules/Biomass_ws3Harvest/R/harvestBridge.R"),
+  file.path(.testDir, "../../modules/biomass_ws3Harvest/R/harvestBridge.R"),
   mustWork = FALSE
 )
 .actionDispatch <- normalizePath(
-  file.path(.testDir, "../../modules/Biomass_ws3Harvest/R/actionDispatch.R"),
+  file.path(.testDir, "../../modules/biomass_ws3Harvest/R/actionDispatch.R"),
   mustWork = FALSE
 )
 if (!file.exists(.harvestBridge)) {
   # fallback for interactive use from project root
-  .harvestBridge  <- "modules/Biomass_ws3Harvest/R/harvestBridge.R"
-  .actionDispatch <- "modules/Biomass_ws3Harvest/R/actionDispatch.R"
+  .harvestBridge  <- "modules/biomass_ws3Harvest/R/harvestBridge.R"
+  .actionDispatch <- "modules/biomass_ws3Harvest/R/actionDispatch.R"
 }
 # harvestBridge must be sourced before actionDispatch so applyClearcut is defined
 source(.harvestBridge)

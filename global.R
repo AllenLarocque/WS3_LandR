@@ -33,7 +33,7 @@ out <- SpaDES.project::setupProject(
     "PredictiveEcology/Biomass_borealDataPrep@main",
     "PredictiveEcology/Biomass_core@main",
     "AllenLarocque/biomass_yieldTablesWS3@main",
-    "AllenLarocque/Biomass_ws3Harvest@main"
+    "AllenLarocque/biomass_ws3Harvest@main"
     # add fire / disturbance modules here as needed, e.g.:
     # "PredictiveEcology/scfm@development"
   ),
@@ -46,7 +46,7 @@ out <- SpaDES.project::setupProject(
       maxSimAge       = 300L,
       siteQualityBins = c(0.33, 0.67)
     ),
-    Biomass_ws3Harvest = list(
+    biomass_ws3Harvest = list(
       ws3Horizon       = ws3Horizon,
       ws3BaseYear      = ws3BaseYear,
       ws3MinHarvestAge = 40L,
