@@ -72,3 +72,24 @@ test_that("buildWs3Inventory does not double-count area for multiple cohorts in 
   # Correct: area = 3.0 (unique deduplication prevents double-counting)
   expect_equal(result$area_ha[1], 3.0)
 })
+
+test_that("buildWs3Inventory warns when pixelArea has no match for a pixel group", {
+  cohortData <- data.table(
+    pixelGroup = c(1L, 99L),  # pixelGroup 99 has no area entry
+    speciesCode = "Pice_mar", ecoregionGroup = "eco1",
+    age = c(80L, 60L), B = c(10000L, 8000L), site_quality = "med"
+  )
+  pixelArea <- data.table(pixelGroup = 1L, area_ha = 2.0)  # no entry for 99
+  expect_warning(
+    buildWs3Inventory(cohortData, pixelArea, periodLength = 10L),
+    regexp = "no matching pixelArea"
+  )
+})
+
+test_that("buildWs3Inventory stops on missing required columns", {
+  bad_cd <- data.table(pixelGroup = 1L, speciesCode = "Pice_mar")  # missing columns
+  pixelArea <- data.table(pixelGroup = 1L, area_ha = 2.0)
+  expect_error(
+    buildWs3Inventory(bad_cd, pixelArea, periodLength = 10L)
+  )
+})

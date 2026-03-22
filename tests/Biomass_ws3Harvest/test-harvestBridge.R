@@ -80,3 +80,9 @@ test_that("applyHarvestAction returns cohortData unchanged for unknown action", 
   )
   expect_equal(result$B, 1000L)
 })
+
+test_that("applyClearcut stops on invalid inputs", {
+  expect_error(
+    applyClearcut("not_a_raster", data.table(), terra::rast())
+  )
+})
