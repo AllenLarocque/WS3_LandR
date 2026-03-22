@@ -12,7 +12,7 @@ binSiteQuality <- function(cohortData, speciesEcoregion, speciesMaxANPP,
   unmatched <- cd[is.na(maxANPP)]
   if (nrow(unmatched) > 0) {
     warning("binSiteQuality: ", nrow(unmatched),
-            " cohorts have unrecognised ecoregion — assigned 'med'")
+            " cohorts have unrecognised ecoregion — assigned 'low'")
     cd[is.na(maxANPP), maxANPP := 0]
   }
 
