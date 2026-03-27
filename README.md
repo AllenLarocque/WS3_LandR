@@ -1,5 +1,7 @@
 # WS3-LandR
 
+NOTE: AI EXPERIMENTAL REPO. TECHNICALLY RUNS BUT STRONG POSSIBILITY IT IS SLOP AND/OR BROKEN
+
 A coupled forest simulation framework integrating **LandR** (landscape-level forest succession) with **WS3** (wood supply optimization). The system simulates boreal forest growth over a 100-year horizon, generates merchantable volume yield curves, solves harvest schedules using linear programming, and feeds harvests back into the succession model.
 
 **Study area**: Resource Inventory Area (RIA), British Columbia — TSA 08, 16, 24, 40, 41
