@@ -39,7 +39,7 @@ plotStandGrowth <- function(ws3YieldCurves, simYear) {
                                     colour = speciesCode,
                                     group  = devTypeKey)) +
     ggplot2::geom_line() +
-    ggplot2::facet_wrap(~ site_quality) +
+    ggplot2::facet_wrap(~ factor(site_quality, levels = c("low", "med", "high"))) +
     ggplot2::labs(
       title  = paste0("Stand Growth Trajectories — year ", simYear),
       x      = "Age (years)",

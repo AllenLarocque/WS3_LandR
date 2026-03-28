@@ -18,7 +18,7 @@ plotInventory <- function(ws3Inventory, simYear) {
                                fill = as.factor(age_class))) +
     ggplot2::geom_col(show.legend = FALSE) +
     ggplot2::scale_fill_viridis_d() +
-    ggplot2::facet_wrap(~ site_quality) +
+    ggplot2::facet_wrap(~ factor(site_quality, levels = c("low", "med", "high"))) +
     ggplot2::labs(
       title = paste0("WS3 Inventory — year ", simYear),
       x     = "Age Class (period units)",
