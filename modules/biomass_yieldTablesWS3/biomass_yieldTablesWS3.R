@@ -33,7 +33,7 @@ doEvent.biomass_yieldTablesWS3 <- function(sim, eventTime, eventType) {
   switch(eventType,
     init = {
       # source helper files
-      .sourceHelper <- function(f) source(file.path(dirname(currentModule(sim)), "R", f))
+      .sourceHelper <- function(f) source(file.path(modulePath(sim), currentModule(sim), "R", f))
       .sourceHelper("siteQuality.R")
       .sourceHelper("curveCache.R")
       .sourceHelper("boudewynConvert.R")
@@ -55,9 +55,10 @@ doEvent.biomass_yieldTablesWS3 <- function(sim, eventTime, eventType) {
 }
 
 .updateCurves <- function(sim) {
-  # 1. Derive species-level max ANPP ceiling from the species table (species$maxANPP
-  #    is the theoretical global maximum; speciesEcoregion$maxANPP is ecoregion-specific)
-  speciesMaxANPP <- sim$species[, .(speciesCode, globalMaxANPP = maxANPP)]
+  # 1. Derive species-level max ANPP ceiling as the maximum maxANPP across all
+  #    ecoregions for each species (speciesEcoregion$maxANPP is ecoregion-specific).
+  speciesMaxANPP <- sim$speciesEcoregion[, .(globalMaxANPP = max(maxANPP, na.rm = TRUE)),
+                                          by = speciesCode]
 
   # 2. Bin site quality
   cd <- binSiteQuality(sim$cohortData, sim$speciesEcoregion, speciesMaxANPP,
@@ -96,7 +97,8 @@ doEvent.biomass_yieldTablesWS3 <- function(sim, eventTime, eventType) {
         juris_id      = boudKeys$juris_id,
         ecozone       = boudKeys$ecozone
       )
-      sim$ws3YieldCurves[[key]] <- curve
+      curve$B_gm2 <- ageB$B_gm2[match(curve$age, ageB$age)]
+      sim$ws3YieldCurves[[key]] <- curve   # data.frame(age, vol_m3ha, B_gm2)
     }
 
     cachePath <- file.path(outputPath(sim), "ws3YieldCurves.rds")

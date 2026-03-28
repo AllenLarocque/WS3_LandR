@@ -66,3 +66,16 @@ test_that("boudewynBiomassToVol errors on unknown canfi_species", {
     regexp = "No Boudewyn"
   )
 })
+
+test_that("boudewynBiomassToVol output can be augmented with B_gm2 column for cache schema", {
+  ageB <- data.frame(
+    age   = 0:5,
+    B_gm2 = c(0, 500, 2000, 5000, 9000, 12000)
+  )
+  curve <- boudewynBiomassToVol(ageB, canfi_species = 101L, juris_id = "BC", ecozone = 9L)
+  # Simulate the upstream merge that .updateCurves will perform
+  curve$B_gm2 <- ageB$B_gm2[match(curve$age, ageB$age)]
+  expect_true("B_gm2" %in% names(curve))
+  expect_equal(nrow(curve), nrow(ageB))
+  expect_true(all(c("age", "vol_m3ha", "B_gm2") %in% names(curve)))
+})
