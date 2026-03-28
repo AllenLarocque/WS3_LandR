@@ -56,7 +56,8 @@ ws3PeriodLength <- 10L   # years between WS3 solves (1 = annual, 10 = default)
 ws3Horizon      <- 10L   # number of WS3 planning periods
 ws3BaseYear     <- 2011L
 
-googledrive::drive_deauth()  # allow anonymous access to public Drive files in non-interactive sessions
+options(gargle_oauth_cache = path.expand("~/.gargle-oauth-cache"))
+googledrive::drive_auth(email = "allen.larocque.work@gmail.com")  # token cached at ~/.gargle-oauth-cache; run drive_auth() interactively once to populate
 
 # ── Python / reticulate setup ──────────────────────────────────────────────────
 # Use the project venv that has ws3 installed.

@@ -24,7 +24,7 @@ plotYieldCurves <- function(ws3YieldCurves, simYear) {
              ecoregionGroup = parts[3],
              devTypeKey    = key)]
     d
-  }))
+  }), fill = TRUE)  # fill=TRUE handles mixed cache (some curves pre-date B_gm2 column)
 
   ggplot2::ggplot(dt, ggplot2::aes(x = age, y = vol_m3ha,
                                     colour = speciesCode,
