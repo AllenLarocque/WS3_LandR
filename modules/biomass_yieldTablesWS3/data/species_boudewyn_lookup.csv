@@ -3,10 +3,11 @@ Pice_mar,101,sw,BC,9
 Pice_gla,105,sw,BC,9
 Pice_eng,106,sw,BC,9
 Pinu_ban,203,sw,BC,9
-Pinu_con,207,sw,BC,9
+Pinu_con,204,sw,BC,9
 Abie_bal,302,sw,BC,9
-Abie_las,305,sw,BC,9
+Abie_las,304,sw,BC,9
 Popu_tre,1201,hw,BC,9
 Popu_bal,1203,hw,BC,9
 Betu_pap,1303,hw,BC,9
-Lari_lar,601,sw,BC,9
+Lari_lar,602,sw,BC,9
+Pseu_men,500,sw,BC,9

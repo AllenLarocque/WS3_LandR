@@ -1,196 +1,110 @@
-# simulateStand(): run Biomass_core for a single-cohort stand, return age-biomass trajectory
-# extractBByAge(): parse saved cohortData outputs to a data.table(age, B_gm2)
-
-# ── extractBByAge ─────────────────────────────────────────────────────────────
+# simulateStand(): simulate single-cohort stand biomass growth using the
+# LANDIS-II Biomass Succession equations (Scheller & Miranda 2015).
 #
-# Reads the qs2-saved cohortData files produced by a SpaDES sim and extracts
-# total stand biomass (summed across all cohorts in pixelGroup 1) at each year.
+# For a SINGLE cohort the competition simplifies:
+#   sumB = B (only one cohort)
+#   bPot = max(1, maxB)
+#   bAP  = B / bPot
+#   bPM  = 1  (cMultiplier / cMultTotal = 1 when there is only one cohort)
 #
-# Arguments:
-#   outputFiles  data.frame with columns: saveTime (integer/numeric), file (character)
-#   maxAge       integer — the simulation end time
-#
-# Returns: data.table(age = 0:maxAge, B_gm2 = numeric) where B_gm2 is NA for
-#          years whose output file is missing.
-#
-extractBByAge <- function(outputFiles, maxAge) {
-  stopifnot(
-    all(c("saveTime", "file") %in% names(outputFiles)),
-    maxAge >= 0
-  )
-
-  ages <- seq(0L, as.integer(maxAge), by = 1L)
-
-  B_vals <- vapply(ages, function(yr) {
-    row <- outputFiles[outputFiles$saveTime == yr, , drop = FALSE]
-    if (nrow(row) == 0L || !file.exists(row$file[1])) {
-      return(NA_real_)
-    }
-    cd <- qs2::qs_read(row$file[1])
-    # na.rm = TRUE: a missing cohort B should not invalidate the whole year's biomass
-    sum(cd$B[cd$pixelGroup == 1L], na.rm = TRUE)
-  }, numeric(1))
-
-  data.table::data.table(age = ages, B_gm2 = B_vals)
-}
-
-# ── simulateStand ─────────────────────────────────────────────────────────────
-#
-# Runs a minimal SpaDES simulation using only Biomass_core (no dispersal, no
-# fire, no seed rain) for a single cohort from age 0 to maxAge (or species
-# longevity, whichever is smaller).
+# This allows us to inline the equations without sourcing Biomass_core helpers,
+# keeping the function self-contained and fast (no SpaDES sub-simulation).
 #
 # Arguments:
-#   speciesCode       character(1)   — e.g. "Pice_mar"
-#   site_quality      character(1)   — "low", "med", or "high" (informational;
-#                                      ecologically captured via speciesEcoregion)
-#   ecoregion         character(1)   — ecoregionGroup label, e.g. "eco1"
-#   species           data.table     — Biomass_core species table (one row per spp)
-#   speciesEcoregion  data.table     — Biomass_core speciesEcoregion table
-#   maxAge            integer        — maximum simulation age (default 300)
-#   modulePath        character(1)   — directory where SpaDES modules live
-#                                      (Biomass_core will be downloaded here if absent)
-#   outputPath        character(1)   — directory for sim output files
+#   speciesCode       character(1)   e.g. "Pice_mar"
+#   site_quality      character(1)   "low", "med", or "high" (informational)
+#   ecoregion         character(1)   ecoregionGroup label
+#   species           data.table     LandR species table (one row per spp)
+#   speciesEcoregion  data.table     LandR speciesEcoregion table
+#   maxAge            integer        maximum simulation age
+#   modulePath        (unused, kept for signature compatibility)
+#   outputPath        (unused, kept for signature compatibility)
 #
-# Returns: data.table(age, B_gm2) — one row per year from 0 to effective maxAge.
-#
+# Returns: data.table(age, B_gm2) — one row per year from 0 to longevity/maxAge.
+
 simulateStand <- function(speciesCode, site_quality, ecoregion,
                           species, speciesEcoregion,
-                          maxAge = 300L,
-                          modulePath  = file.path(tempdir(), "spades_modules"),
-                          outputPath  = file.path(tempdir(), "simStand_outputs")) {
+                          maxAge     = 300L,
+                          modulePath = NULL,
+                          outputPath = NULL) {
 
-  # ── input validation ───────────────────────────────────────────────────────
+  speciesCode <- as.character(speciesCode)
+  ecoregion   <- as.character(ecoregion)
+
   stopifnot(
-    length(speciesCode) == 1L,
-    !is.na(speciesCode),
-    nchar(speciesCode) > 0L,
+    length(speciesCode) == 1L, !is.na(speciesCode), nchar(speciesCode) > 0L,
+    length(ecoregion)   == 1L, !is.na(ecoregion),
     maxAge > 0
   )
 
-  # site_quality is passed for documentation purposes (dev type tuple tracking).
-  # The ecological parameters for this site quality class are captured via
-  # the filtered speciesEcoregion table (maxANPP, maxB).
-
-  # ── resolve effective simulation end time ──────────────────────────────────
-  .sppCode <- speciesCode
-  spp_row  <- species[speciesCode == .sppCode]
-  if (nrow(spp_row) == 0) {
+  # ── species parameters ───────────────────────────────────────────────────
+  if (!is.data.frame(species))
+    stop("simulateStand: 'species' must be a data.frame/data.table; got ",
+         class(species), " (value: ", paste(head(species), collapse=", "), ")")
+  # Compute masks outside data.table `[` to avoid column-name scoping:
+  # inside dt[i], bare names resolve to dt columns, so `speciesCode` would
+  # refer to the column rather than the function argument.
+  spp_mask <- as.character(species$speciesCode) == speciesCode
+  spp_row  <- species[spp_mask]
+  if (nrow(spp_row) == 0)
     stop("simulateStand: speciesCode '", speciesCode, "' not found in species table")
-  }
-  longevity  <- spp_row$longevity[1]
-  end_time   <- min(as.integer(maxAge), as.integer(longevity))
+  longevity      <- as.integer(spp_row$longevity[1])
+  mortalityshape <- as.numeric(spp_row$mortalityshape[1])
+  growthcurve    <- as.numeric(spp_row$growthcurve[1])
+  end_time       <- min(as.integer(maxAge), longevity)
 
-  # ── ensure Biomass_core is present ────────────────────────────────────────
-  if (!dir.exists(file.path(modulePath, "Biomass_core"))) {
-    message("simulateStand: downloading Biomass_core to ", modulePath)
-    dir.create(modulePath, showWarnings = FALSE, recursive = TRUE)
-    SpaDES.core::downloadModule(
-      name = "Biomass_core",
-      path = modulePath,
-      repo = "PredictiveEcology/Biomass_core@main"
-    )
-  }
-
-  # ── output directory ───────────────────────────────────────────────────────
-  dir.create(outputPath, showWarnings = FALSE, recursive = TRUE)
-
-  # ── build single-pixel spatial objects ────────────────────────────────────
-  ecoregionMap <- terra::rast(nrows = 1, ncols = 1, vals = 1L)
-  terra::crs(ecoregionMap) <- "EPSG:4326"
-
-  pixelGroupMap <- terra::rast(nrows = 1, ncols = 1, vals = 1L)
-  terra::crs(pixelGroupMap) <- "EPSG:4326"
-
-  # ── build minimal data.tables ──────────────────────────────────────────────
-  ecoregion_dt <- data.table::data.table(
-    ecoregionGroup = ecoregion,
-    active         = "yes"
-  )
-
-  cohortData <- data.table::data.table(
-    pixelGroup     = 1L,
-    ecoregionGroup = ecoregion,
-    speciesCode    = speciesCode,
-    age            = 0L,
-    B              = 1L,            # must be >= 1 for Biomass_core growth
-    mortality      = 0L,
-    aNPPAct        = 0L
-  )
-
-  # Filter speciesEcoregion to the relevant ecoregion
-  .sppCode  <- speciesCode
-  .ecoGroup <- ecoregion
-  secoregion_sub <- speciesEcoregion[speciesCode == .sppCode & ecoregionGroup == .ecoGroup]
-  if (nrow(secoregion_sub) == 0) {
+  # ── ecoregion parameters ─────────────────────────────────────────────────
+  se_mask <- as.character(speciesEcoregion$speciesCode)   == speciesCode &
+             as.character(speciesEcoregion$ecoregionGroup) == ecoregion
+  se_row  <- speciesEcoregion[se_mask]
+  if (nrow(se_row) == 0)
     stop("simulateStand: no speciesEcoregion row for speciesCode='", speciesCode,
          "', ecoregion='", ecoregion, "'")
+  maxANPP <- as.numeric(se_row$maxANPP[1])
+  maxB    <- as.numeric(se_row$maxB[1])
+
+  # ── inline LANDIS-II growth loop ─────────────────────────────────────────
+  bPot <- max(1.0, maxB)          # constant for single cohort
+  ages   <- integer(end_time + 1L)
+  B_vals <- numeric(end_time + 1L)
+  ages[1]   <- 0L
+  B_vals[1] <- 0
+
+  B   <- 1.0    # seed biomass (g/m2)
+  age <- 1L
+
+  for (yr in seq_len(end_time)) {
+    # Competition (single-cohort simplification: bPM = 1)
+    bAP <- B / bPot
+
+    # ANPP
+    bAPgc <- bAP^growthcurve
+    aNPP  <- pmin(maxANPP, maxANPP * exp(1) * bAPgc * exp(-bAPgc))
+
+    # Growth mortality
+    if (bAP > 1.0) {
+      mBio <- maxANPP
+    } else {
+      mBio <- maxANPP * (2 * bAP) / (1 + bAP)
+    }
+    mBio <- pmin(B, pmin(maxANPP, mBio))
+
+    # Age mortality
+    mAge <- B * exp((age / longevity) * mortalityshape) / exp(mortalityshape)
+    mAge <- pmin(B, mAge)
+
+    # Update biomass and age
+    B   <- pmax(0, B + aNPP - mBio - mAge)
+    ages[yr + 1L]   <- age
+    B_vals[yr + 1L] <- B
+    age <- age + 1L
+
+    if (B <= 0) {
+      ages   <- ages[seq_len(yr + 1L)]
+      B_vals <- B_vals[seq_len(yr + 1L)]
+      break
+    }
   }
 
-  # ── outputs spec: save cohortData at every year ────────────────────────────
-  save_times <- seq(0L, end_time, by = 1L)
-  sim_outputs <- expand.grid(
-    objectName    = "cohortData",
-    saveTime      = save_times,
-    eventPriority = 1,
-    fun           = "qs2::qs_save",
-    stringsAsFactors = FALSE
-  )
-  sim_outputs$file <- file.path(
-    outputPath,
-    sprintf("cohortData_%04d.qs2", as.integer(sim_outputs$saveTime))
-  )
-
-  # ── SpaDES parameters ──────────────────────────────────────────────────────
-  parameters <- list(
-    .globals = list(
-      sppEquivCol = "LandR"
-    ),
-    Biomass_core = list(
-      ".plotInitialTime"  = NA,
-      ".plots"            = NULL,
-      ".saveInitialTime"  = NULL,
-      ".useCache"         = FALSE,
-      ".useParallel"      = 1L,
-      "vegLeadingProportion" = 0,
-      "calcSummaryBGM"    = NULL,
-      "seedingAlgorithm"  = "noSeeding",
-      "minCohortBiomass"  = 1L
-    )
-  )
-
-  paths <- list(
-    modulePath = modulePath,
-    outputPath = outputPath,
-    inputPath  = outputPath,
-    cachePath  = file.path(outputPath, "cache")
-  )
-
-  objects <- list(
-    cohortData    = cohortData,
-    pixelGroupMap = pixelGroupMap,
-    ecoregionMap  = ecoregionMap,
-    ecoregion     = ecoregion_dt,
-    species       = species,
-    speciesEcoregion = secoregion_sub
-  )
-
-  times <- list(start = 0, end = end_time)
-
-  # ── run Biomass_core ───────────────────────────────────────────────────────
-  sim_result <- simInitAndSpades(
-    times   = times,
-    params  = parameters,
-    modules = "Biomass_core",
-    objects = objects,
-    paths   = paths,
-    outputs = sim_outputs
-  )
-
-  # ── extract biomass trajectory ─────────────────────────────────────────────
-  # sim_result$outputs is a data.frame with columns: objectName, saveTime, file, ...
-  out_files <- sim_result$outputs
-  out_files  <- out_files[out_files$objectName == "cohortData", ]
-
-  extractBByAge(out_files, maxAge = end_time)
+  data.table::data.table(age = ages, B_gm2 = B_vals)
 }

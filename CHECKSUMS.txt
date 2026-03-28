@@ -1,0 +1,4 @@
+"file" "checksum" "filesize" "algorithm"
+"SpeciesPresentInCanadianForests_SCANFI_2020.tif" "4534dc261ef6df16" "1524174" "xxhash64"
+"SpeciesPresentInCanadianForests_SCANFI_2020.tif.aux.xml" "df1ea3a3a485d514" "130773" "xxhash64"
+"SpeciesPresentInCanadianForests_SCANFI_2020.zip" "aea07dcd354558ed" "1295996" "xxhash64"
