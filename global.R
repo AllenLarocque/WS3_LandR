@@ -84,7 +84,7 @@ out <- SpaDES.project::setupProject(
     "PredictiveEcology/Biomass_core@development",
     "AllenLarocque/biomass_yieldTablesWS3@main",
     "AllenLarocque/biomass_ws3Harvest@main",
-    "ws3Verify"
+    "AllenLarocque/ws3Verify@main"
     # add fire / disturbance modules here as needed, e.g.:
     # "PredictiveEcology/scfm@development"
   ),
