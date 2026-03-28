@@ -10,7 +10,7 @@
 # Returns: ggplot object
 
 plotAgeMap <- function(cohortData, pixelGroupMap, simYear, maxAge = 300) {
-  if (nrow(cohortData) == 0L) {
+  if (is.null(cohortData) || nrow(cohortData) == 0L) {
     return(ggplot2::ggplot() +
       ggplot2::annotate("text", x = 0.5, y = 0.5,
                         label = "No cohort data available") +
