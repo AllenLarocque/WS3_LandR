@@ -13,7 +13,7 @@ plotSpatialHarvest <- function(annualHarvestRast, cumulativeHarvestRast, simYear
     ggplot2::ggplot() +
       tidyterra::geom_spatraster(data = x) +
       viridis::scale_fill_viridis(na.value = "transparent") +
-      ggplot2::coord_equal() +
+      ggplot2::coord_sf() +
       ggplot2::labs(title = title) +
       ggplot2::theme_bw()
   }

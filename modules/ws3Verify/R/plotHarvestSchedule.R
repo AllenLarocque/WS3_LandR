@@ -15,6 +15,17 @@ plotHarvestSchedule <- function(ws3HarvestSchedule, simYear) {
       ggplot2::theme_bw())
   }
 
+  # Guard: expected columns not present (raw LP solution — schema not yet verified)
+  if (!all(c("period", "vol_harvested") %in% names(ws3HarvestSchedule))) {
+    message("plotHarvestSchedule: ws3HarvestSchedule columns are: ",
+            paste(names(ws3HarvestSchedule)[seq_len(min(10L, ncol(ws3HarvestSchedule)))], collapse = ", "),
+            if (ncol(ws3HarvestSchedule) > 10L) paste0(" ... (", ncol(ws3HarvestSchedule), " total)") else "")
+    return(ggplot2::ggplot() +
+      ggplot2::annotate("text", x = 0.5, y = 0.5,
+                        label = "Harvest schedule schema not yet verified\u2014see plotHarvestSchedule.R NOTE") +
+      ggplot2::theme_bw())
+  }
+
   # Reference line at period-1 harvest volume to visualise even-flow
   ref_vol <- ws3HarvestSchedule$vol_harvested[1L]
 

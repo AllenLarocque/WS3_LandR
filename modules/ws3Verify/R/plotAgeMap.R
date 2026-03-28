@@ -35,7 +35,7 @@ plotAgeMap <- function(cohortData, pixelGroupMap, simYear, maxAge = 300) {
     ggplot2::scale_fill_viridis_c(na.value = "transparent",
                                    name     = "Age (years)",
                                    limits   = c(0, maxAge)) +
-    ggplot2::coord_equal() +
+    ggplot2::coord_sf() +
     ggplot2::labs(title = paste0("Stand Age Map \u2014 year ", simYear)) +
     ggplot2::theme_bw()
 }
