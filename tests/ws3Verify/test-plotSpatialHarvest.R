@@ -29,3 +29,8 @@ test_that("plotSpatialHarvest returns NULL annual when annualHarvestRast is NULL
   expect_null(result$annual)
   expect_s3_class(result$cumulative, "ggplot")
 })
+
+test_that("plotSpatialHarvest errors when cumulativeHarvestRast is NULL", {
+  expect_error(plotSpatialHarvest(.make_rast(), NULL, simYear = 2011),
+               "cumulativeHarvestRast must not be NULL")
+})

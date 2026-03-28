@@ -39,4 +39,6 @@ test_that("plotYieldCurves works with a single dev type", {
 test_that("plotYieldCurves returns ggplot when ws3YieldCurves is empty list", {
   result <- plotYieldCurves(list(), simYear = 2011)
   expect_s3_class(result, "ggplot")
+  expect_length(result$layers, 1L)
+  expect_s3_class(result$layers[[1]]$geom, "GeomText")
 })

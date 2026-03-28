@@ -17,7 +17,7 @@ plotInventory <- function(ws3Inventory, simYear) {
                   ggplot2::aes(x = age_class, y = area_ha,
                                fill = as.factor(age_class))) +
     ggplot2::geom_col(show.legend = FALSE) +
-    viridis::scale_fill_viridis(discrete = TRUE) +
+    ggplot2::scale_fill_viridis_d() +
     ggplot2::facet_wrap(~ site_quality) +
     ggplot2::labs(
       title = paste0("WS3 Inventory — year ", simYear),

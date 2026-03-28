@@ -16,19 +16,24 @@ plotHarvestSchedule <- function(ws3HarvestSchedule, simYear) {
   }
 
   # Reference line at period-1 harvest volume to visualise even-flow
-  ref_vol <- ws3HarvestSchedule$vol_harvested[1]
+  ref_vol <- ws3HarvestSchedule$vol_harvested[1L]
 
-  ggplot2::ggplot(ws3HarvestSchedule,
+  p <- ggplot2::ggplot(ws3HarvestSchedule,
                   ggplot2::aes(x = period, y = vol_harvested,
                                fill = as.factor(period))) +
     ggplot2::geom_col(show.legend = FALSE) +
-    viridis::scale_fill_viridis(discrete = TRUE) +
-    ggplot2::geom_hline(yintercept = ref_vol, linetype = "dashed", colour = "grey40") +
+    ggplot2::scale_fill_viridis_d() +
     ggplot2::labs(
-      title    = paste0("Harvest Schedule \u2014 year ", simYear),
-      subtitle = paste0("Dashed line = period-1 reference (", round(ref_vol), " m\u00b3)"),
-      x        = "Planning Period",
-      y        = "Harvested Volume (m\u00b3)"
+      title = paste0("Harvest Schedule \u2014 year ", simYear),
+      x     = "Planning Period",
+      y     = "Harvested Volume (m\u00b3)"
     ) +
     ggplot2::theme_bw()
+
+  if (!is.na(ref_vol)) {
+    p <- p +
+      ggplot2::geom_hline(yintercept = ref_vol, linetype = "dashed", colour = "grey40") +
+      ggplot2::labs(subtitle = paste0("Dashed line = period-1 reference (", round(ref_vol), " m\u00b3)"))
+  }
+  p
 }

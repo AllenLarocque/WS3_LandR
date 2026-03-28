@@ -12,6 +12,10 @@ plotStandGrowth <- function(ws3YieldCurves, simYear) {
       ggplot2::theme_bw())
   }
 
+  n_parts <- lengths(strsplit(names(ws3YieldCurves), "|", fixed = TRUE))
+  if (any(n_parts != 3L))
+    warning("plotStandGrowth: some keys do not have 3 '|'-separated parts; check ws3YieldCurves names")
+
   # Check for stale cache missing B_gm2
   has_bgm2 <- all(vapply(ws3YieldCurves, function(x) "B_gm2" %in% names(x), logical(1)))
   if (!has_bgm2) {

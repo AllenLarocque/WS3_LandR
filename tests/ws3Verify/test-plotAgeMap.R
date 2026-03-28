@@ -34,4 +34,15 @@ test_that("plotAgeMap returns a ggplot", {
 test_that("plotAgeMap returns annotated ggplot when cohortData is empty", {
   result <- plotAgeMap(.make_cohorts()[0], .make_pgmap(), simYear = 2021)
   expect_s3_class(result, "ggplot")
+  expect_length(result$layers, 1L)
+  expect_s3_class(result$layers[[1]]$geom, "GeomText")
+})
+
+test_that("plotAgeMap respects maxAge cap", {
+  # cohorts have ages 80 and 60; cap at 50 should clip the 80
+  result <- plotAgeMap(.make_cohorts(), .make_pgmap(), simYear = 2021, maxAge = 50)
+  expect_s3_class(result, "ggplot")
+  built <- ggplot2::ggplot_build(result)
+  age_vals <- built$data[[1]]$lyr1
+  expect_lte(max(age_vals, na.rm = TRUE), 50)
 })

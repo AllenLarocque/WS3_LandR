@@ -18,6 +18,9 @@ plotSpatialHarvest <- function(annualHarvestRast, cumulativeHarvestRast, simYear
       ggplot2::theme_bw()
   }
 
+  if (is.null(cumulativeHarvestRast))
+    stop("plotSpatialHarvest: cumulativeHarvestRast must not be NULL")
+
   annual_plot <- if (!is.null(annualHarvestRast)) {
     .harvest_map_plot(annualHarvestRast,
                       paste0("Annual Harvest — year ", simYear))

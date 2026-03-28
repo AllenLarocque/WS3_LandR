@@ -12,6 +12,10 @@ plotYieldCurves <- function(ws3YieldCurves, simYear) {
       ggplot2::theme_bw())
   }
 
+  n_parts <- lengths(strsplit(names(ws3YieldCurves), "|", fixed = TRUE))
+  if (any(n_parts != 3L))
+    warning("plotYieldCurves: some keys do not have 3 '|'-separated parts; check ws3YieldCurves names")
+
   dt <- data.table::rbindlist(lapply(names(ws3YieldCurves), function(key) {
     parts <- strsplit(key, "|", fixed = TRUE)[[1]]
     d <- data.table::as.data.table(ws3YieldCurves[[key]])

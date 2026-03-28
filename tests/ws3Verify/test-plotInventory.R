@@ -28,9 +28,13 @@ test_that("plotInventory returns annotated ggplot for zero-row inventory", {
   empty <- .make_inventory()[0]
   result <- plotInventory(empty, simYear = 2021)
   expect_s3_class(result, "ggplot")
+  expect_length(result$layers, 1L)
+  expect_s3_class(result$layers[[1]]$geom, "GeomText")
 })
 
 test_that("plotInventory returns annotated ggplot for NULL inventory", {
   result <- plotInventory(NULL, simYear = 2021)
   expect_s3_class(result, "ggplot")
+  expect_length(result$layers, 1L)
+  expect_s3_class(result$layers[[1]]$geom, "GeomText")
 })
