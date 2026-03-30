@@ -46,6 +46,12 @@ buildInventoryRaster <- function(cohortData, pixelGroupMap, period_length, base_
     ))
   }, integer(1L))]
 
+  if (any(unique_dtypes$hash_val == 0L))
+    stop("buildInventoryRaster: hash_dt returned 0 for dev-type tuple(s) ",
+         paste(unique_dtypes[hash_val == 0L, paste(speciesCode, site_quality, ecoregionGroup)],
+               collapse = ", "),
+         " — 0 is reserved as the non-forest sentinel in the inventory GeoTIFF")
+
   dom <- merge(dom, unique_dtypes, by = c("speciesCode", "site_quality", "ecoregionGroup"),
                all.x = TRUE)
 
@@ -55,12 +61,13 @@ buildInventoryRaster <- function(cohortData, pixelGroupMap, period_length, base_
 
   # ── 4. Rasterize: one classify() call per band ───────────────────────────
   # cbind(from, to): pixelGroup IDs → band values.
-  # Pixels whose pixelGroup is absent from dom (no cohortData) map to NA → 0.
+  # others=NA ensures pixel groups absent from dom (no cohortData entry) become NA → 0.
+  # Without others=NA, terra::classify keeps the original integer, bypassing the NA→0 step.
   pg <- as.integer(dom$pixelGroup)
 
-  band1 <- terra::classify(pixelGroupMap, cbind(pg, dom$hash_val))
-  band2 <- terra::classify(pixelGroupMap, cbind(pg, dom$age_periods))
-  band3 <- terra::classify(pixelGroupMap, cbind(pg, dom$block_id))
+  band1 <- terra::classify(pixelGroupMap, cbind(pg, dom$hash_val),    others = NA)
+  band2 <- terra::classify(pixelGroupMap, cbind(pg, dom$age_periods),  others = NA)
+  band3 <- terra::classify(pixelGroupMap, cbind(pg, dom$block_id),     others = NA)
 
   inv_rast <- c(band1, band2, band3)
 

@@ -145,10 +145,27 @@ test_that("buildInventoryRaster selects dominant cohort by max B", {
 })
 
 test_that("buildInventoryRaster errors on missing required column", {
-  skip_if_no_ws3()
   cd_bad <- mock_cohortData_binned()[, -"site_quality"]
   expect_error(
     buildInventoryRaster(cd_bad, mock_pixelGroupMap(), 10L, 2011L, tempdir()),
     regexp = "site_quality"
   )
+})
+
+test_that("buildInventoryRaster encodes orphan pixelGroup (in map, absent from cohortData) as 0", {
+  skip_if_no_ws3()
+  # PG 4 is present in map but has no cohortData row — must be encoded as 0 (non-forest)
+  r_extra <- terra::rast(nrows = 1L, ncols = 4L,
+                         xmin = 0, xmax = 4, ymin = 0, ymax = 1,
+                         crs = "EPSG:4326")
+  terra::values(r_extra) <- c(1L, 2L, 3L, 4L)
+  result <- buildInventoryRaster(
+    cohortData    = mock_cohortData_binned(),
+    pixelGroupMap = r_extra,
+    period_length = 10L,
+    base_year     = 2011L,
+    out_dir       = tempdir()
+  )
+  b1 <- terra::values(terra::rast(result$path)[[1L]], mat = FALSE)
+  expect_equal(b1[4L], 0L)
 })
