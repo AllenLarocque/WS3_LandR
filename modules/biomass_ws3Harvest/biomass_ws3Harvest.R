@@ -284,7 +284,7 @@ with open('%s', 'w') as _f:
   outDir <- file.path(outputPath(sim), "harvest")
   dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
 
-  inv <- buildInventoryRaster(
+  invRast <- buildInventoryRaster(
     cohortData    = cd,
     pixelGroupMap = sim$pixelGroupMap,
     period_length = as.integer(params(sim)$.globals$ws3PeriodLength),
@@ -294,8 +294,8 @@ with open('%s', 'w') as _f:
 
   py_main <- reticulate::import_main()
   py_main$`_ws3fm`             <- fm
-  py_main$`_ws3_hdt_table`     <- inv$hdt_table
-  py_main$`_ws3_inv_path`      <- as.character(inv$path)
+  py_main$`_ws3_hdt_table`     <- reticulate::r_to_py(invRast$hdt_table)
+  py_main$`_ws3_inv_path`      <- as.character(invRast$path)
   py_main$`_ws3_snk_path`      <- as.character(outDir)
   py_main$`_ws3_base_year`     <- as.integer(time(sim))
   py_main$`_ws3_period_length` <- as.integer(params(sim)$.globals$ws3PeriodLength)
