@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+modules/*
+cache
+inputs
+outputs
+.Rdata
+.secret
+.secrets
+.Rprofile
