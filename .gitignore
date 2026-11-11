@@ -1,12 +1,17 @@
 .Rproj.user
 .Rhistory
 .RData
+.Rdata
 .Ruserdata
-modules/*
+.Rprofile
+.secret
+.secrets
+## made by running global.R; modules/ holds git submodules (setupProject useGit = "sub")
+packages
 cache
 inputs
 outputs
-.Rdata
-.secret
-.secrets
-.Rprofile
+scratch
+Rplots.pdf
+logs
+.Restart*
