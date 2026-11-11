@@ -7,8 +7,10 @@ Assembled spring 2026; brought back to life 2026-11-10.
 
 ## State (2026-11-10)
 
-`Rscript global.R` runs end to end (2011-2111, ~7 min once inputs are cached; the first
-simInit took 1.7 h of downloads). **But it harvests nothing**: see "Harvest planning is broken".
+`Rscript global.R` runs end to end and harvests (2011-2111, ~5 min once inputs are cached; the
+first simInit took 1.7 h of downloads). Harvested 84,000-186,000 ha per decade out of 1.03 M ha of
+forest; the first plan is 15-16.6 M m3 per decade under the 5% even-flow limit. Cut cells were
+checked in LandR for 2011 and 2021: all hold only young cohorts or none.
 
 Project branch `feature/setupproject-baseline`:
 - `global.R` on the FIIS pattern: `useGit = "sub"` (modules are git submodules), packages only
@@ -28,20 +30,31 @@ Module branches (all on Allen's forks, pinned by `global.R` / the submodules):
 | Repo | Branch | What |
 |---|---|---|
 | biomass_ws3Harvest | `feature/forestraster-spatial-allocation` | spring ForestRaster work + fixes below |
+| biomass_ws3Harvest | `fix/ws3-inventory-handoff` | the four ws3 hand-off faults below (fast-forwarded into the feature branch) |
 | biomass_ws3Harvest | `fix/ws3-integer-age-class` | `age_class` integer (merged into the feature branch) |
 | biomass_yieldTablesWS3 | `fix/pice-eng-canfi-code` | Pice_eng was mapped to Boudewyn 106 (Sitka); now 104 |
 | biomass_yieldTablesWS3 | `feature/pice-eng-gla-lookup` | adds LandR's merged `Pice_eng_gla` -> 105 (white spruce); stacked on the fix |
 
-## Harvest planning is broken (found 2026-11-10; next to fix)
+## ws3 hand-off faults (fixed 2026-11-10)
 
-1. **Age units mixed.** `buildWs3Inventory()` gives ws3 ages in periods (`floor(age / 10)`), but
-   the clearcut operability (`_age >= ws3MinHarvestAge` = 40) and the yield curves are in years.
-   A 100-year stand is age 10 to ws3, so almost nothing is operable.
-2. **Area counted more than once.** ws3 inventory = 2.51 M ha vs 1.39 M ha study area:
-   each pixel's area goes to every species dev type on it (~2.7 cohorts per pixel group).
-3. Consequently the problem covers ~3,300 ha per period; the solution is all `null` except
-   periods 5 and 9; the spatial allocation finds almost no cells.
-4. `ForestModel` keeps the default `max_age` 1000 (periods).
+ws3 ages are in **years** (it adds `period_length` per period). The module gave it periods. Also:
+- each pixel's area went to every species on it (2.51 M ha on a 1.39 M ha study area); the
+  dominant cohort now holds the pixel, in both the inventory and the raster;
+- inventory was loaded to a period `reset()` discards, so every replan reused the 2011 forest;
+- the solved schedule was never applied: `applied_actions` held the last tree `add_problem` built;
+- the even-flow settings passed through R, whose string keys made ws3 build no flow constraint.
+
+Python objects that ws3 reads must not round-trip through R (`convert = FALSE`, or keep it in Python).
+
+## Open issues in the harvest model
+
+- A pixel's whole area and yield come from its dominant cohort's single-species curve.
+- All ten years of a period's cuts reach LandR at once, at the start of the period.
+- `applyClearcut` removes a whole pixel group when any of its pixels is cut. Pixel groups are not
+  contiguous, so blocks are scattered, and a split block is cut in full.
+- Harvested area climbs from 84,000 to 186,000 ha per decade: not investigated.
+- Two `test-spatialBridge.R` tests fail, before these fixes too (lines ~80, ~165): they read
+  the inventory with terra, which returns the written 0 as NA. ws3 reads the raw 0.
 
 ## Upstream bugs to report (not fixed upstream)
 
