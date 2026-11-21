@@ -56,6 +56,10 @@ out <- SpaDES.project::setupProject(
                "PredictiveEcology/LandR@development",
                "PredictiveEcology/timberSupply@development (>= 0.0.0.9004)", # bcManagementUnit(), for the study area
                "reticulate (>= 1.41)",  # py_require()
+               ## qs2 (Biomass_speciesFactorial) >= 0.4.0 links RcppParallel >= 6.1.1 (oneTBB). Upgrading
+               ## RcppParallel 5 -> 6 in place breaks packages compiled against the old TBB (stringfish,
+               ## older qs2: "undefined symbol ... tbb8internal"); rebuild them from source if that happens.
+               "RcppParallel (>= 6.1.1)", "qs2 (>= 0.4.0)",
                "googledrive", "bcdata", "terra", "sf", "data.table",
                "testthat"),  # to run the module tests
   options = list(
