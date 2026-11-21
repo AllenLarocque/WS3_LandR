@@ -45,10 +45,8 @@ out <- SpaDES.project::setupProject(
               "PredictiveEcology/Biomass_speciesFactorial@development",
               "PredictiveEcology/Biomass_speciesParameters@development",
               "PredictiveEcology/Biomass_core@development",
-              ## Pice_eng CanFI fix + Pice_eng_gla entry (2026-11-10), until merged to main
-              "AllenLarocque/biomass_yieldTablesWS3@feature/pice-eng-gla-lookup",
-              ## ForestRaster spatial allocation (2026-03-30), until merged to main
-              "AllenLarocque/biomass_ws3Harvest@feature/forestraster-spatial-allocation",
+              "AllenLarocque/biomass_yieldTablesWS3@main",
+              "AllenLarocque/biomass_ws3Harvest@main",
               "AllenLarocque/ws3Verify@main"),
   times = list(start = .baseYear, end = .baseYear + .periodLength * .horizon),
   packages = c("PredictiveEcology/SpaDES.core@development (>= 3.2.1.9053)",
