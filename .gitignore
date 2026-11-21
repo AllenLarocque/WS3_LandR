@@ -11,6 +11,7 @@ packages
 cache
 inputs
 outputs
+data
 scratch
 Rplots.pdf
 logs

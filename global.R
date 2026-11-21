@@ -40,6 +40,10 @@ out <- SpaDES.project::setupProject(
     cachePath   = file.path(getwd(), "cache")
   ),
   modules = c("PredictiveEcology/Biomass_borealDataPrep@development",
+              ## fit growthcurve, mortalityshape and maxANPP to permanent sample plots, as in FIIS;
+              ## without them the spruces keep the raw LANDIS growthcurve = 1 and barely regrow
+              "PredictiveEcology/Biomass_speciesFactorial@development",
+              "PredictiveEcology/Biomass_speciesParameters@development",
               "PredictiveEcology/Biomass_core@development",
               ## Pice_eng CanFI fix + Pice_eng_gla entry (2026-11-10), until merged to main
               "AllenLarocque/biomass_yieldTablesWS3@feature/pice-eng-gla-lookup",
@@ -57,11 +61,15 @@ out <- SpaDES.project::setupProject(
   options = list(
     repos = repos,
     reproducible.destinationPath = paths$inputPath,
+    reproducible.destinationPathShared = "data", # downloads shared between projects (may be a link)
     spades.allowInitDuringSimInit = TRUE,
     reproducible.useCache = TRUE
   ),
   params = list(
     .globals = list(ws3PeriodLength = .periodLength),
+    ## FIIS settings (Dominique Caron, 2026-10-02); balanceGrowth lets spruce, fir and pine grow side by side
+    Biomass_speciesParameters = list(.plots = "png", standAgesForFitting = c(0L, 100L),
+                                     balanceGrowth = TRUE),
     biomass_yieldTablesWS3 = list(maxSimAge = 300L, siteQualityBins = c(0.33, 0.67)),
     biomass_ws3Harvest = list(ws3Horizon = .horizon, ws3BaseYear = .baseYear,
                               ws3MinHarvestAge = 40L, ws3Solver = "highs")
