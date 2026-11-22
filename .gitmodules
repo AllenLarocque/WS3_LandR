@@ -1,0 +1,21 @@
+[submodule "modules/Biomass_borealDataPrep"]
+	path = modules/Biomass_borealDataPrep
+	url = https://github.com/PredictiveEcology/Biomass_borealDataPrep
+[submodule "modules/Biomass_core"]
+	path = modules/Biomass_core
+	url = https://github.com/PredictiveEcology/Biomass_core
+[submodule "modules/biomass_yieldTablesWS3"]
+	path = modules/biomass_yieldTablesWS3
+	url = https://github.com/AllenLarocque/biomass_yieldTablesWS3
+[submodule "modules/biomass_ws3Harvest"]
+	path = modules/biomass_ws3Harvest
+	url = https://github.com/AllenLarocque/biomass_ws3Harvest
+[submodule "modules/ws3Verify"]
+	path = modules/ws3Verify
+	url = https://github.com/AllenLarocque/ws3Verify
+[submodule "modules/Biomass_speciesFactorial"]
+	path = modules/Biomass_speciesFactorial
+	url = https://github.com/PredictiveEcology/Biomass_speciesFactorial
+[submodule "modules/Biomass_speciesParameters"]
+	path = modules/Biomass_speciesParameters
+	url = https://github.com/PredictiveEcology/Biomass_speciesParameters
