@@ -107,8 +107,10 @@ out <- SpaDES.project::setupProject(
   functions = "R/studyArea.R"
 )
 
-## ws3 runs in a Python environment that reticulate builds with uv on first use
-reticulate::py_require("ws3")
+## ws3 runs in a Python environment that reticulate builds with uv on first use.
+## pulp: ws3 1.0.5's Problem.status() imports it whatever the solver (highs here), but ws3 does
+## not declare it, so a fresh environment failed with "No module named 'pulp'" (2026-11-26).
+reticulate::py_require(c("ws3", "pulp"))
 
 ## Temporary workaround for a LandR::makeEcoregionMap bug, see R/patchLandR.R
 source("R/patchLandR.R")
