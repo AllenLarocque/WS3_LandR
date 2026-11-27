@@ -63,7 +63,6 @@ out <- SpaDES.project::setupProject(
   options = list(
     repos = repos,
     reproducible.destinationPath = paths$inputPath,
-    reproducible.destinationPathShared = "data", # downloads shared between projects (may be a link)
     spades.allowInitDuringSimInit = TRUE,
     reproducible.useCache = TRUE
   ),
